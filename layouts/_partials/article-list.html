@@ -1,0 +1,62 @@
+{{- $allPosts := where site.RegularPages "Section" "posts" -}}
+{{- $isTag := eq .Kind "term" -}}
+{{- $posts := $allPosts -}}
+{{- if $isTag -}}
+  {{- $posts = where .RegularPages "Section" "posts" -}}
+{{- end -}}
+{{- $paginator := .Paginate $posts.ByDate.Reverse -}}
+
+<header class="page-header">
+  <h1>文章</h1>
+  {{ with site.GetPage "/posts" }}
+  <div class="post-description">{{ .Description | markdownify }}</div>
+  {{ end }}
+</header>
+
+<nav class="article-filters" aria-label="按标签筛选文章">
+  <span class="article-filters-label">标签</span>
+  <ul class="article-filter-list">
+    <li><a class="article-filter" href="{{ "posts/" | relURL }}"{{ if not $isTag }} aria-current="page"{{ end }}>全部文章 <span class="article-filter-count">{{ len $allPosts }}</span></a></li>
+    {{- range site.Taxonomies.tags.Alphabetical -}}
+      {{- $tagPosts := where .Pages "Section" "posts" -}}
+      {{- if gt (len $tagPosts) 0 }}
+    <li><a class="article-filter" href="{{ .Page.RelPermalink }}"{{ if eq $.RelPermalink .Page.RelPermalink }} aria-current="page"{{ end }}>{{ .Page.LinkTitle }} <span class="article-filter-count">{{ len $tagPosts }}</span></a></li>
+      {{- end -}}
+    {{- end }}
+  </ul>
+</nav>
+
+<p class="article-filter-result">
+  {{ if $isTag }}标签「{{ .Title }}」{{ else }}全部文章{{ end }} · 共 {{ len $posts }} 篇
+  {{ if gt $paginator.TotalPages 1 }}<span>第 {{ $paginator.PageNumber }} / {{ $paginator.TotalPages }} 页</span>{{ end }}
+</p>
+
+{{- range $paginator.Pages }}
+<article class="post-entry">
+  {{- $isHidden := (.Param "cover.hiddenInList") | default (.Param "cover.hidden") | default false }}
+  {{- partial "cover.html" (dict "cxt" . "IsSingle" false "isHidden" $isHidden) }}
+  <header class="entry-header"><h2>{{ .Title }}</h2></header>
+  {{- if ne (.Param "hideSummary") true }}
+  <div class="entry-content"><p>{{ .Summary | plainify | htmlUnescape }}{{ if .Truncated }}…{{ end }}</p></div>
+  {{- end }}
+  {{- if not (.Param "hideMeta") }}
+  <footer class="entry-footer">{{ partial "post_meta.html" . }}</footer>
+  {{- end }}
+  <a class="entry-link" aria-label="阅读：{{ .Title | plainify }}" href="{{ .RelPermalink }}"></a>
+</article>
+{{- else }}
+<p>这个标签下还没有文章。<a href="{{ "posts/" | relURL }}">查看全部文章</a></p>
+{{- end }}
+
+{{- if gt $paginator.TotalPages 1 }}
+<footer class="page-footer">
+  <nav class="pagination" aria-label="文章分页">
+    {{- if $paginator.HasPrev }}
+    <a class="prev" href="{{ $paginator.Prev.URL }}">« 上一页</a>
+    {{- end }}
+    {{- if $paginator.HasNext }}
+    <a class="next" href="{{ $paginator.Next.URL }}">下一页 »</a>
+    {{- end }}
+  </nav>
+</footer>
+{{- end }}
