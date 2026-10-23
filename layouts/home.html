@@ -1,0 +1,41 @@
+{{ define "main" }}
+<section class="intro" aria-labelledby="intro-title">
+  <div class="intro-copy">
+    <p class="eyebrow"><span class="status-dot"></span>{{ .Params.eyebrow }}</p>
+    <h1 id="intro-title">{{ .Title }}</h1>
+    <p class="intro-tagline">{{ .Params.tagline }}</p>
+    <div class="intro-description">{{ .Content }}</div>
+    <div class="intro-actions">
+      <a class="primary-link" href="{{ "posts/" | relURL }}">阅读文章 <span aria-hidden="true">↗</span></a>
+      <a class="text-link" href="https://github.com/htmmd27">GitHub <span aria-hidden="true">↗</span></a>
+    </div>
+  </div>
+  <div class="intro-art" aria-hidden="true">
+    <div class="art-orbit"></div><div class="art-orbit orbit-two"></div>
+    <div class="monogram">h<span>.</span></div><span class="art-note">ALWAYS EXPLORING</span>
+    <span class="art-spark">✳</span>
+  </div>
+</section>
+<section class="home-section" aria-labelledby="writing-title">
+  <div class="section-top"><div><span class="section-number">01 / WRITING</span><h2 id="writing-title">最近的记录</h2></div><a class="section-more" href="{{ "posts/" | relURL }}">全部文章 <span aria-hidden="true">↗</span></a></div>
+  <div class="writing-list">
+    {{ range first 3 (where site.RegularPages "Section" "posts") }}
+    <article class="writing-row">
+      <time datetime="{{ .Date.Format "2006-01-02" }}">{{ .Date.Format "2006.01.02" }}</time>
+      <div><h3><a href="{{ .RelPermalink }}">{{ .Title }}</a></h3><p>{{ .Summary | plainify }}</p><span class="writing-tag">{{ delimit .Params.tags " / " }}</span></div>
+      <a class="row-arrow" href="{{ .RelPermalink }}" aria-label="阅读：{{ .Title }}">↗</a>
+    </article>
+    {{ end }}
+  </div>
+</section>
+<section class="home-section projects-section" aria-labelledby="projects-title">
+  <div class="section-top"><div><span class="section-number">02 / PROJECTS</span><h2 id="projects-title">动手做过的事</h2></div><a class="section-more" href="{{ "projects/" | relURL }}">全部项目 <span aria-hidden="true">↗</span></a></div>
+  <div class="project-grid">
+    {{ range first 2 (where site.RegularPages "Section" "projects").ByWeight }}
+    <article class="project-card"><div class="project-top"><span class="project-symbol" aria-hidden="true">{{ "</>" }}</span><span class="project-tech">{{ .Params.tech }}</span></div><h3><a href="{{ .RelPermalink }}">{{ .Title }}</a></h3><p>{{ .Description }}</p><a class="project-details" href="{{ .RelPermalink }}">了解项目 <span aria-hidden="true">↗</span></a></article>
+    {{ end }}
+  </div>
+</section>
+<aside class="home-note"><span aria-hidden="true">✳</span><p>一点点积累，一点点生长。<br><small>感谢你来这里逛逛。</small></p><a href="{{ "about/" | relURL }}">更多关于我 ↗</a></aside>
+{{ end }}
+

@@ -1,0 +1,70 @@
+baseURL: https://htmmd27.github.io/
+title: htmmd27
+languageCode: zh-CN
+defaultContentLanguage: zh
+hasCJKLanguage: true
+timeZone: Asia/Hong_Kong
+theme: PaperMod
+enableRobotsTXT: true
+pagination:
+  pagerSize: 8
+outputs:
+  home: [HTML, RSS, JSON]
+permalinks:
+  posts: /posts/:slug/
+params:
+  env: production
+  title: htmmd27 的个人主页
+  description: 记录学习，分享实践。htmmd27 的文章、项目与个人笔记。
+  author: htmmd27
+  defaultTheme: auto
+  mainSections: [posts]
+  DateFormat: '2006 年 01 月 02 日'
+  ShowReadingTime: true
+  ShowBreadCrumbs: true
+  ShowPostNavLinks: true
+  ShowCodeCopyButtons: true
+  ShowToc: true
+  TocOpen: true
+  hideFooter: false
+  assets:
+    favicon: /favicon.svg
+    disableHLJS: true
+  label:
+    text: htmmd27.
+  socialIcons:
+    - name: github
+      url: https://github.com/htmmd27
+    - name: rss
+      url: /index.xml
+  fuseOpts:
+    isCaseSensitive: false
+    shouldSort: true
+    threshold: 0.35
+    minMatchCharLength: 1
+    keys: [title, permalink, summary, content]
+menu:
+  main:
+    - identifier: posts
+      name: 文章
+      url: /posts/
+      weight: 10
+    - identifier: projects
+      name: 项目
+      url: /projects/
+      weight: 20
+    - identifier: about
+      name: 关于
+      url: /about/
+      weight: 30
+    - identifier: search
+      name: 搜索
+      url: /search/
+      weight: 40
+markup:
+  highlight:
+    noClasses: false
+  goldmark:
+    renderer:
+      unsafe: false
+
