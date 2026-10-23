@@ -6,7 +6,7 @@
 
 ## 旧站保留
 
-仓库原本使用 Hexo + NexT。原 `hexoMd` 分支及提交历史保持不变；`main` 原有的静态文件也保留在仓库根目录，新流程仅发布 Hugo 生成的 `public/`。旧站唯一的 Hello World 文章已从原 Markdown 迁入 `content/posts/legacy-hello-world.md`，保留原访问地址 `/2024/11/18/hello-world/`。旧的年、月归档地址会转到新归档页。
+仓库原本使用 Hexo + NexT。原 `hexoMd` 分支及提交历史保持不变；`main` 原有的静态文件也保留在仓库根目录，新流程仅发布 Hugo 生成的 `public/`。现有文章已按要求从新版网站删除，历史版本可从 Git 提交记录查阅。
 
 ## 更新内容
 
@@ -77,8 +77,8 @@ hugo --gc --minify
 ## 个性化
 
 - 当前展示名为 GitHub 用户名 `htmmd27`，可自行修改。
-- “从这里开始”及 Markdown 指南为初始示例文章，可替换或删除。
-- 项目简介来自 GitHub 公开信息，可编辑、扩展或删除。
+- 文章栏目当前为空，在 `content/posts/` 新建 Markdown 即可发布。
+- 项目栏目仅保留 wanfangSpider，简介来自 GitHub 公开信息。
 - 搜索、深浅色切换、文章目录、代码复制、RSS、归档、站点地图由 PaperMod/Hugo 提供。
 - 首页采用浅米色与森林绿；自定义样式在 `assets/css/extended/custom.css`。
 - 开源来源与许可证见 `THIRD_PARTY.md` 和 `themes/PaperMod/LICENSE`。

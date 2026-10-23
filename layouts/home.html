@@ -25,6 +25,8 @@
       <div><h3><a href="{{ .RelPermalink }}">{{ .Title }}</a></h3><p>{{ .Summary | plainify }}</p><span class="writing-tag">{{ delimit .Params.tags " / " }}</span></div>
       <a class="row-arrow" href="{{ .RelPermalink }}" aria-label="阅读：{{ .Title }}">↗</a>
     </article>
+    {{ else }}
+    <p class="intro-description">暂时还没有文章，新的记录会在这里更新。</p>
     {{ end }}
   </div>
 </section>
