@@ -10,3 +10,5 @@
 
 主题随仓库保存，首次部署无需下载子模块。更新主题时，替换主题目录并保留许可证，然后更新此提交记录，重新构建验证。
 
+文章公式使用 [KaTeX](https://katex.org/) 0.16.22（MIT），来自 npm 官方发布包；所需 JavaScript、CSS、字体和许可证保存在 `static/vendor/katex/`，无需访问外部 CDN。
+

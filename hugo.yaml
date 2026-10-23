@@ -65,6 +65,15 @@ markup:
   highlight:
     noClasses: false
   goldmark:
+    extensions:
+      passthrough:
+        enable: true
+        delimiters:
+          block: [['\[', '\]']]
+          inline: [['\(', '\)']]
+      extras:
+        insert:
+          enable: true
     renderer:
       unsafe: false
 
