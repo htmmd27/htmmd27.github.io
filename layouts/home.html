@@ -33,7 +33,7 @@
 <section class="home-section projects-section" aria-labelledby="projects-title">
   <div class="section-top"><div><span class="section-number">02 / PROJECTS</span><h2 id="projects-title">动手做过的事</h2></div><a class="section-more" href="{{ "projects/" | relURL }}">全部项目 <span aria-hidden="true">↗</span></a></div>
   <div class="project-grid">
-    {{ range first 2 (where site.RegularPages "Section" "projects").ByWeight }}
+    {{ range first 3 (where site.RegularPages "Section" "projects").ByWeight }}
     <article class="project-card"><div class="project-top"><span class="project-symbol" aria-hidden="true">{{ "</>" }}</span><span class="project-tech">{{ .Params.tech }}</span></div><h3><a href="{{ .RelPermalink }}">{{ .Title }}</a></h3><p>{{ .Description }}</p><a class="project-details" href="{{ .RelPermalink }}">了解项目 <span aria-hidden="true">↗</span></a></article>
     {{ end }}
   </div>

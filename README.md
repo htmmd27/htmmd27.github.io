@@ -80,7 +80,7 @@ hugo --gc --minify
 - 已从 2022-10-26 的 Halo 备份恢复 29 篇原已发布文章，文件为 `content/posts/halo-*.md`，保留原始标题、日期、分类、标签与封面。继续新建 Markdown 即可发布。
 - 恢复的文章图片保存在 `static/upload/`，旧域名图片已改为站内引用。数学公式使用 `\(行内公式\)` 与 `\[块公式\]`，文章需要设置 `math: true`。
 - 原备份中的草稿与旧自定义页面另存于本地 `artifacts/halo-restored/`，不上传公开仓库。
-- 项目栏目仅保留 wanfangSpider，简介来自 GitHub 公开信息。
+- 项目栏目展示 RayTracingLearn、CatlikeCodingUnity 与 wanfangSpider，按 Markdown 中的 `weight` 排序；前两项注明教程来源，万方爬虫注明历史版本状态。
 - 搜索、深浅色切换、文章目录、代码复制、RSS、归档、站点地图由 PaperMod/Hugo 提供。
 - 首页采用浅米色与森林绿；自定义样式在 `assets/css/extended/custom.css`。
 - 开源来源与许可证见 `THIRD_PARTY.md` 和 `themes/PaperMod/LICENSE`。
