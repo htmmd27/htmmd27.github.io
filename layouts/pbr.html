@@ -1,0 +1,57 @@
+{{ define "main" }}
+{{ $css := resources.Get "css/pbr-lab.css" | minify | fingerprint }}
+{{ $js := resources.Get "js/pbr-lab.js" | minify | fingerprint }}
+<link rel="stylesheet" href="{{ $css.RelPermalink }}">
+<article class="pbr-lab" id="pbr-lab">
+  <header class="pbr-heading">
+    <h1>{{ .Title }}</h1>
+    <p>{{ .Description }}</p>
+  </header>
+  <div class="pbr-bench">
+    <section class="pbr-view" aria-label="材质球对照">
+      <div class="pbr-stage">
+        <div class="pbr-stage-head"><span>材质球对照</span><span id="pbr-view-label">完整材质</span></div>
+        <div class="pbr-samples">
+          <figure><canvas data-sample="smooth" width="150" height="150" aria-label="低粗糙度参照球"></canvas><figcaption>光滑参照<small>r = 0.16</small></figcaption></figure>
+          <figure class="pbr-main-sample"><canvas data-sample="live" width="320" height="320" aria-label="当前参数的材质球"></canvas><figcaption>当前材质<small id="pbr-live-r">r = 0.32</small></figcaption></figure>
+          <figure><canvas data-sample="rough" width="150" height="150" aria-label="高粗糙度参照球"></canvas><figcaption>粗糙参照<small>r = 0.80</small></figcaption></figure>
+        </div>
+      </div>
+      <fieldset class="pbr-modes"><legend>观察分量</legend>
+        {{ range slice (slice "full" "完整材质") (slice "diffuse" "漫反射") (slice "specular" "镜面反射") (slice "D" "D · 分布") (slice "G" "G · 遮蔽") (slice "F" "F · 菲涅耳") }}
+        <button type="button" data-mode="{{ index . 0 }}" aria-pressed="{{ if eq (index . 0) "full" }}true{{ else }}false{{ end }}">{{ index . 1 }}</button>
+        {{ end }}
+      </fieldset>
+    </section>
+    <section class="pbr-controls" aria-labelledby="pbr-settings">
+      <h2 id="pbr-settings">材质与灯光</h2>
+      <div class="pbr-presets">
+        <label for="pbr-preset">材质预设</label>
+        <select id="pbr-preset"><option value="copper">铜</option><option value="gold">金</option><option value="ceramic">青釉陶瓷</option><option value="rubber">橡胶</option><option value="custom" disabled>自定义材质</option></select>
+      </div>
+      <div class="pbr-color"><label for="pbr-base">基础色</label><input id="pbr-base" type="color" value="#f4c5aa"></div>
+      <label class="pbr-slider" for="pbr-r">粗糙度 <output id="pbr-r-value" for="pbr-r">0.32</output></label>
+      <input id="pbr-r" type="range" min="0.05" max="1" step="0.01" value="0.32">
+      <label class="pbr-slider" for="pbr-m">金属度 <output id="pbr-m-value" for="pbr-m">1.00</output></label>
+      <input id="pbr-m" type="range" min="0" max="1" step="0.01" value="1">
+      <label class="pbr-slider" for="pbr-a">灯光偏角 <output id="pbr-a-value" for="pbr-a">−32°</output></label>
+      <input id="pbr-a" type="range" min="-85" max="85" step="1" value="-32">
+      <button type="button" class="pbr-reset" id="pbr-reset">恢复初始设置</button>
+    </section>
+  </div>
+  <noscript><p>开启 JavaScript 后即可操作材质球。下方可阅读直接光照的原理。</p></noscript>
+  <section class="pbr-lesson" aria-labelledby="pbr-lesson-title">
+    <h2 id="pbr-lesson-title">光怎样构成表面颜色？</h2>
+    <p id="pbr-task">保持金属度不变，把中间球的粗糙度从 0.16 调到 0.80，对照两侧参照球观察高光。</p>
+    <div class="pbr-equation" id="pbr-equation">Lₒ = (漫反射 + 镜面反射) × 入射光 × max(N·L, 0)</div>
+    <p id="pbr-observe">迎光面的亮度随入射角变化，背光面接收的直接光为零。完整材质和两种反射分量均经过色调映射和 sRGB 编码后显示。</p>
+    <div id="pbr-angle-test" hidden>
+      <label class="pbr-slider" for="pbr-theta">微表面入射角 <output id="pbr-theta-value" for="pbr-theta">60°</output></label>
+      <input id="pbr-theta" type="range" min="0" max="90" value="60">
+      <p>当前材质的线性 RGB 反射率 <output id="pbr-reflectance" for="pbr-base pbr-m pbr-theta"></output></p>
+    </div>
+  </section>
+  <div class="pbr-reading post-content">{{ .Content }}</div>
+</article>
+<script defer src="{{ $js.RelPermalink }}"></script>
+{{ end }}
