@@ -1,3 +1,4 @@
+import { startCourse } from "./pbr-course.js";
 (() => {
   "use strict";
   const root = document.getElementById("pbr-lab");
@@ -56,7 +57,7 @@
     }
     return {canvas, context, normals, image};
   }
-  const samples = Array.from(root.querySelectorAll("canvas"), sampleBuffer).filter(Boolean);
+  const samples = Array.from(root.querySelectorAll("canvas[data-sample]"), sampleBuffer).filter(Boolean);
   if (!samples.length) {
     get("view-label").textContent = "当前浏览器未能创建画布";
   }
@@ -69,19 +70,23 @@
     return {x, y, z, hx:x / h, hy:y / h, hz:(z + 1) / h, intensity,
       F:f0.map(c => fresnel(c, (z + 1) / h))};
   }
-  function render(sample, r, m, color, f0, lamp) {
+  function render(sample, r, m, color, f0, lamp, view = mode) {
     const {context, image, normals} = sample;
     const a2 = r ** 4, k = (r + 1) ** 2 / 8;
     const pixels = image.data;
-    const diagnostic = mode === "D" || mode === "G";
+    const diagnostic = view === "D" || view === "G";
     for (let p = 0, n = 0; p < pixels.length; p += 4, n += 3) {
       if (!pixels[p + 3]) continue;
       const nx = normals[n], ny = normals[n + 1], nv = normals[n + 2];
-      if (mode === "F") {
+      if (view === "F") {
         for (let c = 0; c < 3; c++) pixels[p + c] = byte(fresnel(f0[c], nv));
         continue;
       }
       const nl = nx * lamp.x + ny * lamp.y + nv * lamp.z;
+      if (view === "cosine") {
+        pixels[p] = pixels[p + 1] = pixels[p + 2] = byte(Math.max(0, nl));
+        continue;
+      }
       if (nl <= 0) {
         pixels[p] = pixels[p + 1] = pixels[p + 2] = 0;
         continue;
@@ -91,15 +96,15 @@
       const D = a2 / (Math.PI * denominator * denominator);
       const G = nv / (nv * (1 - k) + k) * nl / (nl * (1 - k) + k);
       if (diagnostic) {
-        const gray = byte(mode === "D" ? D / (1 + D) : G);
+        const gray = byte(view === "D" ? D / (1 + D) : G);
         pixels[p] = pixels[p + 1] = pixels[p + 2] = gray;
         continue;
       }
       const specScale = D * G / (4 * nv * nl);
       for (let c = 0; c < 3; c++) {
         const F = lamp.F[c];
-        const diffuse = mode === "specular" ? 0 : (1 - F) * (1 - m) * color[c] / Math.PI;
-        const specular = mode === "diffuse" ? 0 : specScale * F;
+        const diffuse = view === "specular" ? 0 : (1 - F) * (1 - m) * color[c] / Math.PI;
+        const specular = view === "diffuse" ? 0 : specScale * F;
         const radiance = (diffuse + specular) * nl * lamp.intensity;
         pixels[p + c] = byte(radiance / (1 + radiance));
       }
@@ -117,9 +122,17 @@
     const color = linearBase(), f0 = color.map(c => 0.04 * (1 - m) + c * m);
     const a = Number(angle.value) * Math.PI / 180;
     const lamp = light(Math.sin(a), 0.62, Math.cos(a), 5, f0);
+    const parts = mode === "full" && get("compare").value === "parts";
+    get("compare").disabled = mode !== "full";
+    get("left-caption").textContent = parts ? "漫反射" : "光滑参照 · r = 0.16";
+    get("right-caption").textContent = parts ? "镜面反射" : "粗糙参照 · r = 0.80";
+    if (parts) get("task").textContent = "左球只显示漫反射，右球只显示镜面反射。中间球在线性空间中相加，再转换为屏幕颜色。试着把金属度拉到 1，观察哪一项消失。";
+    else if (mode === "full") get("task").textContent = lessons.full[1];
     for (const sample of samples) {
       const kind = sample.canvas.dataset.sample;
-      render(sample, kind === "smooth" ? 0.16 : kind === "rough" ? 0.8 : r, m, color, f0, lamp);
+      const sampleR = parts || kind === "live" ? r : kind === "smooth" ? 0.16 : 0.8;
+      const view = parts ? {smooth:"diffuse", live:"full", rough:"specular"}[kind] : mode;
+      render(sample, sampleR, m, color, f0, lamp, view);
     }
     get("r-value").value = r.toFixed(2);
     get("m-value").value = m.toFixed(2);
@@ -154,6 +167,7 @@
     input.addEventListener("input", () => { preset.value = "custom"; redraw(); });
   }
   angle.addEventListener("input", redraw);
+  get("compare").addEventListener("change", redraw);
   theta.addEventListener("input", () => {
     const m = Number(metal.value);
     updateProbe(linearBase().map(c => 0.04 * (1 - m) + c * m));
@@ -161,7 +175,8 @@
   preset.addEventListener("change", () => applyPreset(preset.value));
   for (const button of modeButtons) button.addEventListener("click", () => setMode(button.dataset.mode));
   get("reset").addEventListener("click", () => {
-    angle.value = -32; theta.value = 60; applyPreset("copper"); setMode("full");
+    angle.value = -32; theta.value = 60; get("compare").value = "parts"; applyPreset("copper"); setMode("full");
   });
   setMode("full");
+  startCourse(root, {sampleBuffer, render, light, fresnel});
 })();

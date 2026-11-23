@@ -1,20 +1,55 @@
 {{ define "main" }}
 {{ $css := resources.Get "css/pbr-lab.css" | minify | fingerprint }}
-{{ $js := resources.Get "js/pbr-lab.js" | minify | fingerprint }}
+{{ $js := resources.Get "js/pbr-lab.js" | js.Build (dict "minify" true) | fingerprint }}
 <link rel="stylesheet" href="{{ $css.RelPermalink }}">
 <article class="pbr-lab" id="pbr-lab">
   <header class="pbr-heading">
     <h1>{{ .Title }}</h1>
     <p>{{ .Description }}</p>
   </header>
+  <div class="pbr-course">
+    <nav class="pbr-contents" aria-label="学习步骤">
+      <h2>学习路线</h2>
+      <ol>{{ range $i, $step := .Params.steps }}
+        <li><button type="button" data-step="{{ $i }}"{{ if not $i }} aria-current="step"{{ end }}><span>{{ printf "%02d" (add $i 1) }}</span>{{ $step.name }}</button></li>
+      {{ end }}</ol>
+      <label for="pbr-step-select">学习步骤</label>
+      <select id="pbr-step-select">{{ range $i, $step := .Params.steps }}<option value="{{ $i }}">{{ add $i 1 }} / 7 · {{ $step.name }}</option>{{ end }}</select>
+    </nav>
+    <div class="pbr-chapters">
+      {{ range $i, $step := .Params.steps }}
+      <section data-chapter="{{ $i }}" aria-labelledby="pbr-title-{{ $i }}"{{ if $i }} hidden{{ end }}>
+        <p class="pbr-progress">第 {{ add $i 1 }} 步 / {{ len $.Params.steps }}</p>
+        <h2 tabindex="-1" id="pbr-title-{{ $i }}">{{ $step.title }}</h2>
+        <p class="pbr-intuition">{{ $step.text }}</p>
+        {{ if $step.label }}
+        <div class="pbr-exhibit">
+          <div class="pbr-plates">
+            <svg viewBox="0 0 400 220" role="img" aria-label="{{ $step.name }}互动示意图"></svg>
+            <figure><canvas width="180" height="180" aria-label="此步骤的球面效果"></canvas><figcaption></figcaption></figure>
+          </div>
+          <div class="pbr-experiment">
+            <p>{{ $step.task }}</p>
+            <label class="pbr-slider" for="guide-slider-{{ $i }}">{{ $step.label }} <output for="guide-slider-{{ $i }}"></output></label>
+            <input id="guide-slider-{{ $i }}" type="range" min="{{ $step.min }}" max="{{ $step.max }}" step="{{ $step.increment | default 1 }}" value="{{ $step.initial }}">
+            <p class="pbr-finding"></p>
+          </div>
+        </div>
+        <details class="pbr-model"><summary>查看这一步的公式</summary><p>{{ $step.formula }}</p></details>
+        {{ end }}
+      </section>
+      {{ end }}
+    </div>
+  </div>
+  <div id="pbr-final" hidden>
   <div class="pbr-bench">
     <section class="pbr-view" aria-label="材质球对照">
       <div class="pbr-stage">
         <div class="pbr-stage-head"><span>材质球对照</span><span id="pbr-view-label">完整材质</span></div>
         <div class="pbr-samples">
-          <figure><canvas data-sample="smooth" width="150" height="150" aria-label="低粗糙度参照球"></canvas><figcaption>光滑参照<small>r = 0.16</small></figcaption></figure>
+          <figure><canvas data-sample="smooth" width="150" height="150" aria-label="左侧参照球"></canvas><figcaption id="pbr-left-caption">漫反射</figcaption></figure>
           <figure class="pbr-main-sample"><canvas data-sample="live" width="320" height="320" aria-label="当前参数的材质球"></canvas><figcaption>当前材质<small id="pbr-live-r">r = 0.32</small></figcaption></figure>
-          <figure><canvas data-sample="rough" width="150" height="150" aria-label="高粗糙度参照球"></canvas><figcaption>粗糙参照<small>r = 0.80</small></figcaption></figure>
+          <figure><canvas data-sample="rough" width="150" height="150" aria-label="右侧参照球"></canvas><figcaption id="pbr-right-caption">镜面反射</figcaption></figure>
         </div>
       </div>
       <fieldset class="pbr-modes"><legend>观察分量</legend>
@@ -25,6 +60,9 @@
     </section>
     <section class="pbr-controls" aria-labelledby="pbr-settings">
       <h2 id="pbr-settings">材质与灯光</h2>
+      <div class="pbr-presets"><label for="pbr-compare">完整材质对照</label>
+        <select id="pbr-compare"><option value="parts">分解反射</option><option value="roughness">比较粗糙度</option></select>
+      </div>
       <div class="pbr-presets">
         <label for="pbr-preset">材质预设</label>
         <select id="pbr-preset"><option value="copper">铜</option><option value="gold">金</option><option value="ceramic">青釉陶瓷</option><option value="rubber">橡胶</option><option value="custom" disabled>自定义材质</option></select>
@@ -39,7 +77,6 @@
       <button type="button" class="pbr-reset" id="pbr-reset">恢复初始设置</button>
     </section>
   </div>
-  <noscript><p>开启 JavaScript 后即可操作材质球。下方可阅读直接光照的原理。</p></noscript>
   <section class="pbr-lesson" aria-labelledby="pbr-lesson-title">
     <h2 id="pbr-lesson-title">光怎样构成表面颜色？</h2>
     <p id="pbr-task">保持金属度不变，把中间球的粗糙度从 0.16 调到 0.80，对照两侧参照球观察高光。</p>
@@ -51,6 +88,9 @@
       <p>当前材质的线性 RGB 反射率 <output id="pbr-reflectance" for="pbr-base pbr-m pbr-theta"></output></p>
     </div>
   </section>
+  </div>
+  <nav id="pbr-paging" aria-label="教程翻页"><button id="pbr-prev" type="button" disabled>← 上一步</button><button id="pbr-next" type="button">下一步 →</button></nav>
+  <noscript><p>开启 JavaScript 可操作图解，也可在下方阅读原理与参考文献。</p></noscript>
   <div class="pbr-reading post-content">{{ .Content }}</div>
 </article>
 <script defer src="{{ $js.RelPermalink }}"></script>
