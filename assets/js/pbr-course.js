@@ -1,4 +1,5 @@
 import { drawEnvironmentLesson } from "./pbr-environment.js";
+import { specularLessons } from "./pbr-specular.js";
 // The diagrams are cross sections. Angles are measured from the surface normal.
 const rad = degree => degree * Math.PI / 180;
 const amber = "#ffca80", mint = "#8fe1ca", ink = "#e4edeb", faint = "#71878d";
@@ -112,14 +113,18 @@ export function startCourse(root,engine) {
   const meter=root.querySelector(".pbr-meter"), routeTitle=root.querySelector("#pbr-route-title");
   const examples=[incidence,directions,facets,masking,fresnelCurve,metallic];
   const buffers=new Map();
-  const middle=chapters.findIndex(chapter=>chapter.dataset.ibl);
+  const parts=Array.from(root.querySelectorAll(".pbr-parts a"),link=>({
+    link, start:chapters.findIndex(chapter=>"#"+chapter.id===link.hash),
+    name:link.querySelector("b").textContent+" · "+link.querySelector("span").textContent
+  }));
+  const partAt=index=>parts.findLast(part=>part.start<=index);
   const bench=chapters.findIndex(chapter=>chapter.hasAttribute("data-bench"));
   const stepName=i=>buttons[i].lastChild.textContent.trim();
   let current=0, queued=false;
   function draw() {
     queued=false;
     if (chapters[current].dataset.ibl) {
-      drawEnvironmentLesson(chapters[current],engine);
+      drawEnvironmentLesson(chapters[current],engine,specularLessons);
       return;
     }
     if (!examples[current]) return;
@@ -146,32 +151,32 @@ export function startCourse(root,engine) {
   }
   function show(index,focus,record) {
     current=index;
-    const ibl=index>=middle;
+    const activePart=partAt(index);
     chapters.forEach((chapter,i)=>{chapter.hidden=index!==i;});
     buttons.forEach((button,i)=>{
-      button.parentElement.hidden=(i>=middle)!==ibl;
+      button.parentElement.hidden=partAt(i)!==activePart;
       button.toggleAttribute("data-done",i<index);
       if (i===index) button.setAttribute("aria-current","step");
       else button.removeAttribute("aria-current");
     });
     select.value=String(index);
-    if (routeTitle) routeTitle.textContent=ibl?"中篇 · 环境漫反射":"上篇 · 单灯直接光";
+    if (routeTitle) routeTitle.textContent=activePart.name;
     if (meter) {
       meter.setAttribute("aria-valuenow",String(index+1));
       meter.style.setProperty("--done",(index+1)/chapters.length);
     }
     const last=index===chapters.length-1;
     root.querySelector("#pbr-final").hidden=!chapters[index].hasAttribute("data-bench");
-    for (const part of root.querySelectorAll(".pbr-parts a")) {
-      if ((part.hash==="#ibl")===ibl) part.setAttribute("aria-current","true");
-      else part.removeAttribute("aria-current");
+    for (const part of parts) {
+      if (part===activePart) part.link.setAttribute("aria-current","true");
+      else part.link.removeAttribute("aria-current");
     }
     prev.disabled=index===0;
     prev.querySelector("span").textContent=index?stepName(index-1):"已是第一步";
-    next.querySelector("small").textContent=last?"读完了":index+1===middle?"进入中篇":"下一步";
+    next.querySelector("small").textContent=last?"读完了":partAt(index+1)!==activePart?"进入"+partAt(index+1).link.querySelector("b").textContent:"下一步";
     next.querySelector("span").textContent=last?"从头回顾":stepName(index+1);
     if (record) {
-      const hash=index===0?"#direct":index===middle?"#ibl":"#step-"+(index+1);
+      const hash=index===activePart.start?activePart.link.hash:"#step-"+(index+1);
       if (location.hash!==hash) history.pushState(null,"",hash);
     }
     draw();
@@ -191,12 +196,18 @@ export function startCourse(root,engine) {
     const input=chapter.querySelector("input");
     if (!input) return;
     const undo=chapter.querySelector("[data-undo]"), initial=input.defaultValue;
-    const sync=()=>{if (undo) undo.hidden=input.value===initial;};
+    const material=chapter.querySelector("select");
+    const sync=()=>{if (undo) undo.hidden=input.value===initial && (!material || material.selectedIndex===0);};
+    material?.addEventListener("change",()=>{sync(); draw();});
     input.addEventListener("input",()=>{
       sync();
       if (!queued) {queued=true; requestAnimationFrame(draw);}
     });
-    undo?.addEventListener("click",()=>{input.value=initial; sync(); draw(); input.focus();});
+    undo?.addEventListener("click",()=>{
+      input.value=initial;
+      if (material) material.selectedIndex=0;
+      sync(); draw(); input.focus();
+    });
     sync();
   });
   // Arrow keys page through steps unless a control has keyboard focus.
@@ -207,18 +218,19 @@ export function startCourse(root,engine) {
     if (event.key==="ArrowLeft" && current>0) {event.preventDefault(); go(current-1);}
   });
   const fromHash=()=>{
-    if (location.hash==="#ibl") return middle;
+    const part=parts.find(item=>item.link.hash===location.hash);
+    if (part) return part.start;
     const match=/^#step-(\d+)$/.exec(location.hash);
     return match?Math.min(chapters.length,Math.max(1,Number(match[1])))-1:0;
   };
-  for (const link of root.querySelectorAll(".pbr-parts a")) {
+  for (const {link,start} of parts) {
     link.addEventListener("click",event=>{
       event.preventDefault();
-      go(link.hash==="#ibl"?middle:0);
+      go(start);
     });
   }
   window.addEventListener("popstate",()=>{
-    if (/^(|#direct|#ibl|#step-\d+)$/.test(location.hash)) show(fromHash(),true,false);
+    if (!location.hash || parts.some(p=>p.link.hash===location.hash) || /^#step-\d+$/.test(location.hash)) show(fromHash(),true,false);
   });
   // A shared #step-N link lands on the lesson itself rather than the page header.
   show(fromHash(),/^#step-\d+$/.test(location.hash),false);

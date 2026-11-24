@@ -192,19 +192,22 @@ function compose(ctx,ball,ao,engine) {
   return ["分开观察两个线性光照分量","合成 · 单灯直接光 + 环境漫反射",
     `环境分量保留 ${Math.round(100*ao)}%。${ao===0?"合成球现在与单灯球相同，背光面只剩黑色。":"观察背光面上的颜色，它来自窗户、天空和地面的间接光。"}`];
 }
-export function drawEnvironmentLesson(section,engine) {
+export { map, lookup, environment, irradianceMap, chart, label, circle, marker, sphere, uv };
+
+export function drawEnvironmentLesson(section,engine,specularLessons) {
   const canvases=section.querySelectorAll("canvas"), ctx=canvases[0].getContext("2d");
   const ball=sample(canvases[1],engine);
   if (!ctx || !ball) {section.querySelector(".pbr-finding").textContent="当前浏览器无法显示图解，可展开下方公式阅读。";return;}
   ctx.clearRect(0,0,400,220);
   const input=section.querySelector("input"), v=Number(input.value), kind=section.dataset.ibl;
   const experiments={panorama:panoramaView,weights,integral:sampling,bake:(c,b,n)=>maps(c,b,n,false),
-    mip:(c,b,n)=>maps(c,b,n,true),compose};
-  const [diagram,preview,note]=experiments[kind](ctx,ball,v,engine);
+    mip:(c,b,n)=>maps(c,b,n,true),compose,...specularLessons};
+  const [diagram,preview,note]=experiments[kind](ctx,ball,v,engine,section);
   const captions=section.querySelectorAll("figcaption");
   captions[0].textContent=diagram; captions[1].textContent=preview;
+  canvases[1].setAttribute("aria-label",preview);
   const finding=section.querySelector(".pbr-finding");
   finding.textContent=note;
   if (note.includes("\\(")) window.renderSiteMath(finding);
-  section.querySelector("output").value=["panorama","weights","bake"].includes(kind)?v+"°":kind==="compose"?v.toFixed(2):String(v);
+  section.querySelector("output").value=["panorama","weights","bake","reflection","brdf"].includes(kind)?v+"°":input.step==="0.01"?v.toFixed(2):String(v);
 }

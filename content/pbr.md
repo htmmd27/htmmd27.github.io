@@ -2,7 +2,7 @@
 title: PBR 材质实验室
 layout: pbr
 math: true
-description: PBR（基于物理的渲染）用材质和光线的性质，预测表面有多亮、呈什么颜色。这里有 13 个可以动手的小实验：先用一盏灯找出高光从哪里来，再把球放进有窗的房间，看环境光怎样照亮背光面。
+description: 从一盏灯下的高光，到陶瓷背面的暖色，再到金属上的窗户倒影。通过三个篇章的互动实验，观察光照、材质和视角怎样共同决定表面的颜色。
 steps:
   - name: 光照与角度
     title: 同一束光，为什么斜照更暗？
@@ -125,6 +125,70 @@ steps:
     increment: 0.01
     initial: 1
     formula: '\(F_{\mathrm{env}}\) 使用含粗糙度的 Schlick 近似。\(c\) 是基础色，\(m\) 是金属度。各项在线性空间相加，最后才映射到屏幕。\[\begin{aligned}k_d&=(1-F_{\mathrm{env}})(1-m)\\L_{\mathrm{indirect}}&=\mathrm{AO}\,k_d\,c\,B(N)\\L_o&=L_{\mathrm{direct}}+L_{\mathrm{indirect}}\end{aligned}\]'
+  - name: 找到倒影
+    experiment: reflection
+    title: 同一扇窗，为什么只在球上的某些位置出现？
+    text: 眼睛固定，沿着球的水平截面移动取样点。理想镜面会沿反射方向 R 读取环境，窗户只会出现在恰好能把窗光送进眼睛的地方。
+    task: 从球心往两侧移动标记。观察表面法线转了多少度，以及环境图上的取样点走了多远。
+    label: 法线偏角
+    min: -80
+    max: 80
+    initial: 0
+    formula: '由表面指向眼睛的方向为 \(V\)。理想镜面的环境取样方向是\[R=2(N\cdot V)N-V.\]在本实验的平面截面内，法线转过 \(\beta\)，反射方向转过 \(2\beta\)。'
+  - name: 有限的样本
+    experiment: sequence
+    title: 只取几十个样本，怎样少漏掉一块区域？
+    text: 左右两个方格分别放入固定种子的伪随机点和 Hammersley 点。它们都是给采样器的二维输入。观察空白区域和成团的点，再看同一批 Hammersley 点如何映射到微表面法线。
+    task: 增加样本数，比较同样预算下两组点覆盖了多少个格子。
+    label: 样本数
+    min: 8
+    max: 128
+    increment: 8
+    initial: 32
+    formula: '蒙特卡洛积分按概率密度补偿每个样本。\[I\approx\frac1S\sum_{i=0}^{S-1}\frac{f(X_i)}{p(X_i)}.\]本实验用确定性的低差异点集做准蒙特卡洛求积：\(X_i=(i/S,\Phi_2(i))\)，其中 \(\Phi_2\) 把二进制位反序放到小数点后。'
+  - name: GGX 重要性采样
+    experiment: importance
+    title: 为什么越光滑的表面，样本越集中？
+    text: 同样的二维输入可以生成完全不同的方向。先按 GGX 分布选半程向量 H，再把视线绕 H 反射得到取光方向 L。图中的圆盘是从法线上方看到的方向投影。
+    task: 调大粗糙度，比较 H 与 L 的扩散程度。留意有多少反射方向仍在表面上方。
+    label: 粗糙度
+    min: 0.05
+    max: 1
+    increment: 0.01
+    initial: 0.35
+    formula: '设 \(\alpha=r^2\)，二维样本为 \((u,v)\)。\[\varphi=2\pi u,\qquad \cos\theta_h=\sqrt{\frac{1-v}{1+(\alpha^2-1)v}}.\]相对于立体角，\(p_H=D(H)(N\cdot H)\)，变换到光线方向后 \(p_L=p_H/(4|V\cdot H|)\)。'
+  - name: 预过滤环境图
+    experiment: prefilter
+    title: 怎样让窗框随着粗糙度连续变模糊？
+    text: 对每个反射方向，围绕它用 GGX 取样，算出一个加权环境颜色。把几种粗糙度的结果存成不同层。运行时用反射方向查图，并在相邻两层之间插值。
+    task: 缓慢拖动粗糙度。对照上下两张预过滤图，观察球上的窗框如何从一层过渡到下一层。
+    label: 粗糙度
+    min: 0
+    max: 1
+    increment: 0.01
+    initial: 0.36
+    formula: '烘焙时令 \(N=V=R\)，按 GGX 采样 \(L_i\)，取 \(w_i=\max(N\cdot L_i,0)\)。\[P(R,r)\approx\frac{\sum_i L_{\rm env}(L_i)w_i}{\sum_i w_i}.\]这里保存五个等距粗糙度层。这个近似会损失掠射视角下沿一个方向拉长的反射细节。'
+  - name: BRDF 积分查找表
+    experiment: brdf
+    title: 环境颜色已有了，材质和视角还会怎样改变反射？
+    text: 在均匀白色环境中积分，把材质的正入射反射率提出来，剩下缩放系数 A 和偏移系数 B。横轴是视角余弦，纵轴是粗糙度，红、绿两通道分别显示 A、B。
+    task: 固定粗糙度为 0.40，从正视拖向掠视，对照标记位置读取 A、B 和非金属的镜面响应。
+    label: 观察角
+    min: 0
+    max: 89
+    initial: 35
+    formula: '设 \(\mu_x=N\cdot x\)，\(q=(1-V\cdot H)^5\)。将方向概率密度代入镜面积分，\(D\) 与余弦项约去，剩下的权重为\[\frac{f_s\,\mu_L}{p_L}=F\,G_{\rm vis},\qquad G_{\rm vis}=\frac{G\,|V\cdot H|}{\mu_H\mu_V}.\]再用 \(F=F_0(1-q)+q\) 把积分拆成两个与材质颜色无关的数：\[\begin{aligned}A&=\tfrac1S\sum(1-q)G_{\rm vis}\\B&=\tfrac1S\sum qG_{\rm vis}\end{aligned}\]落到表面下方的样本贡献为零。IBL 的 Schlick–GGX 几何近似取 \(k=r^2/2\)。'
+  - name: 合成镜面 IBL
+    experiment: finish
+    title: 补上哪一项，金属才映出房间？
+    text: 第一颗球沿用上篇的单灯与中篇的环境漫反射。第二颗球只显示环境镜面项。合成球先在线性空间加上两者，再统一映射到屏幕。
+    task: 先用铜观察窗框怎样随粗糙度消失，再换成陶瓷，对比同一房间里的背光面和倒影颜色。
+    label: 粗糙度
+    min: 0.05
+    max: 1
+    increment: 0.01
+    initial: 0.22
+    formula: '使用 \(N\cdot V\) 与 \(r\) 查得 \(A,B\)，使用 \(R\) 与 \(r\) 查得预过滤颜色 \(P\)。\[\begin{aligned}L_{\rm spec,env}&\approx P(R,r)(F_0A+B)\\L_o&=L_{\rm direct}+L_{\rm diff,env}+L_{\rm spec,env}\end{aligned}\]这里环境可见度固定为 1。换材质会同时改变 \(F_0\) 和漫反射权重。'
 ---
 
 ### 从单灯到环境光
@@ -167,9 +231,15 @@ F₀
 IBL
 : 基于图像的光照，用一张环境图代替一盏盏具体的灯。
 
-### 下篇预告
+### 下篇里的两张表
 
-中篇只处理了环境光的漫反射部分。下篇将补上镜面 IBL：按粗糙度预过滤环境图，用 split-sum 近似把积分拆成两张查找表[^karis]，最后让粗糙金属在房间里也能映出模糊的窗户。
+下篇沿用王子饼干的镜面 IBL 教程[^last]。一颗金属球映出的窗户，原本需要对整个可见半球的环境辐亮度和镜面 BRDF 一起积分。
+
+\[
+L_{\rm spec,env}(V)=\int_{\Omega^+} L_i(L)\,f_s(L,V)\,\max(N\cdot L,0)\,\mathrm d\omega_L
+\]
+
+Split-sum 近似[^karis]把这项工作分开做。第一张表存各反射方向、各粗糙度下的环境颜色，换房间时需要重新生成。第二张表存 BRDF 积分的两个系数，同一种 BRDF 可以在不同房间复用。实验里的点集、滤波图、查找表和材质球均在浏览器中计算。可对照 LearnOpenGL 的镜面 IBL 实现[^spec]。
 
 ### 参考文献 {#references}
 
@@ -179,3 +249,5 @@ IBL
 [^middle]: 王子饼干．[《呆呆兽也可以学会的PBR渲染·中》](https://zhuanlan.zhihu.com/p/2013530242078221650)．知乎。
 [^ibl]: Joey de Vries. LearnOpenGL, [Diffuse irradiance](https://learnopengl.com/PBR/IBL/Diffuse-irradiance).
 [^karis]: Brian Karis. [Real Shading in Unreal Engine 4](https://blog.selfshadow.com/publications/s2013-shading-course/karis/s2013_pbs_epic_notes_v2.pdf). SIGGRAPH 2013 Course: Physically Based Shading in Theory and Practice.
+[^last]: 王子饼干．[《呆呆兽也可以学会的PBR渲染·下》](https://zhuanlan.zhihu.com/p/2015883644632343035)．知乎。
+[^spec]: Joey de Vries. LearnOpenGL, [Specular IBL](https://learnopengl.com/PBR/IBL/Specular-IBL).

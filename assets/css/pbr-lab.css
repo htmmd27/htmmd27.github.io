@@ -61,7 +61,7 @@
 .pbr-specimens span { font-size: 14px; font-weight: 600; width: 100%; }
 .pbr-specimens small { font-size: 11px; color: var(--lab-dim); margin-top: 2px; }
 
-/* Part switcher: three chapters of one course, the third not yet written. */
+/* Part switcher */
 .pbr-parts {
   grid-column: 1 / -1;
   display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -80,8 +80,8 @@
 .pbr-parts a[aria-current] { background: color-mix(in srgb, var(--accent) 9%, var(--entry)); }
 .pbr-parts a[aria-current]::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: var(--accent); }
 .pbr-parts a[aria-current] b { color: var(--accent); }
-.pbr-part-soon { opacity: .6; cursor: default; }
-.pbr-part-soon span { font-weight: 500; }
+.pbr-material { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.pbr-material select { color: var(--primary); background: var(--entry); border: 1px solid var(--border); border-radius: 5px; padding: 6px; }
 
 /* ---------- Course ---------- */
 .pbr-course {
@@ -239,8 +239,7 @@
 }
 @media (max-width: 740px) {
   .pbr-lab { margin-top: 26px; }
-  .pbr-parts { grid-template-columns: 1fr 1fr; }
-  .pbr-part-soon { display: none !important; }
+  .pbr-parts > a { display: flex; flex-direction: column; gap: 2px; padding: 8px; }
   .pbr-parts small { display: none; }
   .pbr-course { grid-template-columns: 1fr; gap: 14px; }
   .pbr-contents { position: static; display: flex; align-items: center; gap: 10px; }

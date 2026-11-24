@@ -4,7 +4,11 @@
 {{ $steps := .Params.steps }}
 {{ $total := len $steps }}
 {{ $middle := $total }}
-{{ range $i, $step := $steps }}{{ if and $step.experiment (eq $middle $total) }}{{ $middle = $i }}{{ end }}{{ end }}
+{{ $lower := $total }}
+{{ range $i, $step := $steps }}
+  {{ if eq $step.experiment "panorama" }}{{ $middle = $i }}{{ end }}
+  {{ if eq $step.experiment "reflection" }}{{ $lower = $i }}{{ end }}
+{{ end }}
 <link rel="stylesheet" href="{{ $css.RelPermalink }}">
 <article class="pbr-lab" id="pbr-lab">
   <header class="pbr-heading">
@@ -25,8 +29,8 @@
     </div>
     <nav class="pbr-parts" aria-label="选择篇章">
       <a href="#direct"><b>上篇</b><span>单灯直接光</span><small>{{ $middle }} 步 · 从余弦定律到 Cook–Torrance</small></a>
-      <a href="#ibl"><b>中篇</b><span>环境漫反射</span><small>{{ sub $total $middle }} 步 · 从全景图到辐照度贴图</small></a>
-      <span class="pbr-part-soon" aria-disabled="true"><b>下篇</b><span>镜面 IBL</span><small>编写中 · 预过滤环境图与 BRDF 查找表</small></span>
+      <a href="#ibl"><b>中篇</b><span>环境漫反射</span><small>{{ sub $lower $middle }} 步 · 从全景图到辐照度贴图</small></a>
+      <a href="#specular"><b>下篇</b><span>镜面 IBL</span><small>{{ sub $total $lower }} 步 · 从窗户倒影到完整材质</small></a>
     </nav>
   </header>
 
@@ -43,7 +47,7 @@
     <div class="pbr-chapters">
       <div class="pbr-meter" role="progressbar" aria-label="学习进度" aria-valuemin="1" aria-valuemax="{{ $total }}" aria-valuenow="1"><span></span></div>
       {{ range $i, $step := $steps }}
-      <section data-chapter="{{ $i }}" {{ if not $i }}id="direct"{{ else if eq $i $middle }}id="ibl"{{ end }} {{ with $step.experiment }}data-ibl="{{ . }}"{{ end }} {{ if $step.bench }}data-bench{{ end }} aria-labelledby="pbr-title-{{ $i }}"{{ if $i }} hidden{{ end }}>
+      <section data-chapter="{{ $i }}" {{ if not $i }}id="direct"{{ else if eq $i $middle }}id="ibl"{{ else if eq $i $lower }}id="specular"{{ end }} {{ with $step.experiment }}data-ibl="{{ . }}"{{ end }} {{ if $step.bench }}data-bench{{ end }} aria-labelledby="pbr-title-{{ $i }}"{{ if $i }} hidden{{ end }}>
         <p class="pbr-progress">第 {{ add $i 1 }} 步，共 {{ $total }} 步</p>
         <h2 tabindex="-1" id="pbr-title-{{ $i }}">{{ $step.title }}</h2>
         <p class="pbr-intuition">{{ $step.text }}</p>
@@ -59,6 +63,7 @@
           </div>
           <div class="pbr-experiment">
             <p class="pbr-task"><b>动手</b>{{ $step.task }}</p>
+            {{ if eq $step.experiment "finish" }}<label class="pbr-material">材质 <select id="ibl-material"><option value="copper">铜</option><option value="ceramic">陶瓷</option></select></label>{{ end }}
             <div class="pbr-dial">
               <label class="pbr-slider" for="guide-slider-{{ $i }}">{{ $step.label }} <output for="guide-slider-{{ $i }}"></output></label>
               <input id="guide-slider-{{ $i }}" type="range" min="{{ $step.min }}" max="{{ $step.max }}" step="{{ $step.increment | default 1 }}" value="{{ $step.initial }}">
