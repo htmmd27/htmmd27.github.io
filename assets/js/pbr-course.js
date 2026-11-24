@@ -74,7 +74,7 @@ function masking(a) {
   art+=line(...lamp,x,y,amber,blocked?"5 4":"")+dot(...lamp,6,amber);
   art+='<path d="M25 164 L110 160 L153 151 L184 98 L215 151 L238 155 L293 156 L375 161 V184 H25Z" fill="#455b56" stroke="#9fbab0" stroke-width="2"/>';
   art+=dot(x,y,4,mint)+label(24,206,blocked?"凸起挡住了通向该点的光线":"光线越过凸起，抵达该点",amber);
-  return {art,note:`剖面中的示例点${blocked?"被遮挡":"能收到光"}。球心的统计几何项 G = ${g.toFixed(2)}，它描述许多微表面的平均可见性。`,
+  return {art,note:String.raw`剖面中的示例点${blocked?"被遮挡":"能收到光"}。球心的统计几何项 \(G = ${g.toFixed(2)}\)，它描述许多微表面的平均可见性。`,
     caption:"几何项 G · 球心正对眼睛",lightAngle:-a,view:"G",r:0.65};
 }
 function fresnelCurve(a,fresnel) {
@@ -100,7 +100,7 @@ function metallic(m) {
       label(312,y+14,percent(value));
   });
   return {art:art+label(32,193,"线性 RGB · 固定铜色基础色"),
-    note:`红通道的漫反射权重 kᵈ = ${((1-rgb[0])*(1-m)).toFixed(2)}。金属度为 1 时，三个通道的漫反射权重都为零。`,
+    note:String.raw`红通道的漫反射权重 \(k_d = ${((1-rgb[0])*(1-m)).toFixed(2)}\)。金属度为 1 时，三个通道的漫反射权重都为零。`,
     caption:"单灯合成 · 粗糙度固定为 0.34",view:"full",color:colors,m,r:0.34};
 }
 
@@ -127,7 +127,9 @@ export function startCourse(root,engine) {
     const result=examples[current](value,engine.fresnel);
     section.querySelector("svg").innerHTML=result.art;
     section.querySelector("output").value=input.step==="1"?value+"°":value.toFixed(2);
-    section.querySelector(".pbr-finding").textContent=result.note;
+    const finding=section.querySelector(".pbr-finding");
+    finding.textContent=result.note;
+    if (result.note.includes("\\(")) window.renderSiteMath(finding);
     section.querySelector("figcaption").textContent=result.caption;
     const canvas=section.querySelector("canvas");
     if (!buffers.has(canvas)) buffers.set(canvas,engine.sampleBuffer(canvas));

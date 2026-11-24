@@ -138,7 +138,7 @@ function weights(ctx,ball,degrees) {
   for (let d=15;d<=90;d+=15) circle(c,w/2,w/2,r*Math.sin(radians(d)),"#708582");
   circle(c,w/2,w/2,Math.max(1,r*Math.sin(a)),gold);
   return ["均匀天空 · 峰值归一为 100%","从正上方看 · 金线是选中的环",
-    `面积因子 sinθ = ${Math.sin(a).toFixed(2)}，投影因子 cosθ = ${Math.cos(a).toFixed(2)}。乘积在 45° 最大，当前为峰值的 ${(100*Math.sin(2*a)).toFixed(0)}%。`];
+    String.raw`面积因子 \(\sin\theta = ${Math.sin(a).toFixed(2)}\)，投影因子 \(\cos\theta = ${Math.cos(a).toFixed(2)}\)。乘积在 45° 最大，当前为峰值的 ${(100*Math.sin(2*a)).toFixed(0)}%。`];
 }
 function sampling(ctx,ball,rings) {
   circle(ctx,200,110,97,"#435751",true);
@@ -151,7 +151,7 @@ function sampling(ctx,ball,rings) {
     c.fillRect(8+i*w/2,45,w/2-14,72); label(c,i?"密集参考":"当前估计",10+i*w/2,143);
   }
   return ["沿法线看半球 · 点的颜色取自房间","白色漫反射表面 · 两种采样密度",
-    `${rings} 环 × ${4*rings} 个方向 = ${4*rings*rings} 次采样。辐照度的线性亮度为 ${lum(E).toFixed(3)}，参考值为 ${lum(reference).toFixed(3)}（16,384 次采样）。`];
+    String.raw`${rings} 环，每环 ${4*rings} 个方向，共 \(${rings}\times ${4*rings}=${4*rings*rings}\) 次采样。辐照度的线性亮度为 ${lum(E).toFixed(3)}，参考值为 ${lum(reference).toFixed(3)}（16,384 次采样）。`];
 }
 function maps(ctx,ball,value,compareMip) {
   const top=compareMip?mip(value):environment(), bottom=irradianceMap();
@@ -166,7 +166,7 @@ function maps(ctx,ball,value,compareMip) {
   marker(ctx,u*400,64); marker(ctx,u*400,177);
   marker(ball.context,ball.canvas.width*(.5+.48*Math.sin(radians(value))),ball.canvas.height/2);
   return ["标记对应同一个法线方向","白色 Lambert 球 · 按法线查表",
-    `这个方向的原图亮度为 ${lum(lookup(top,u,v)).toFixed(2)}。查烘焙图得到 E/π = ${lum(lookup(bottom,u,v)).toFixed(2)}（线性亮度）。`];
+    String.raw`这个方向的原图亮度为 ${lum(lookup(top,u,v)).toFixed(2)}。查烘焙图得到 \(E/\pi = ${lum(lookup(bottom,u,v)).toFixed(2)}\)（线性亮度）。`];
 }
 const compositions=new WeakMap();
 function compose(ctx,ball,ao,engine) {
@@ -203,6 +203,8 @@ export function drawEnvironmentLesson(section,engine) {
   const [diagram,preview,note]=experiments[kind](ctx,ball,v,engine);
   const captions=section.querySelectorAll("figcaption");
   captions[0].textContent=diagram; captions[1].textContent=preview;
-  section.querySelector(".pbr-finding").textContent=note;
+  const finding=section.querySelector(".pbr-finding");
+  finding.textContent=note;
+  if (note.includes("\\(")) window.renderSiteMath(finding);
   section.querySelector("output").value=["panorama","weights","bake"].includes(kind)?v+"°":kind==="compose"?v.toFixed(2):String(v);
 }
