@@ -1,7 +1,7 @@
 ---
 title: PBR 材质实验室
 layout: pbr
-description: PBR（基于物理的渲染）用材质和光线的性质来预测表面有多亮、呈什么颜色。先用一盏灯找出高光形成的原因，再把球放进有窗的房间，观察环境如何照亮背光面。
+description: PBR（基于物理的渲染）用材质和光线的性质，预测表面有多亮、呈什么颜色。这里有 13 个可以动手的小实验：先用一盏灯找出高光从哪里来，再把球放进有窗的房间，看环境光怎样照亮背光面。
 steps:
   - name: 光照与角度
     title: 同一束光，为什么斜照更暗？
@@ -132,6 +132,44 @@ steps:
 
 第七步用 Cook–Torrance 微表面模型[^cook]计算单灯高光。中篇[^middle]从一张环境图出发，计算周围景物给陶瓷带来的漫反射光，并把它加回直接光。这里的镜面球用于辨认环境方向，粗糙金属的环境高光属于镜面 IBL。半球积分的推导可对照 LearnOpenGL 的漫反射辐照度章节[^ibl]。
 
+### 怎样使用这个实验室
+
+每一步只改一个变量。先读标题里的问题，按「动手」提示拖动滑块，再看金色框里的读数是否回答了这个问题。公式收在每一步底部，第一次读可以跳过。拖乱了就点「还原」。
+
+页面地址会跟着步骤变化，例如 `#step-9` 直接打开半球与权重，可以把某一步单独发给别人。没有聚焦在滑块上时，键盘左右方向键可以翻页。
+
+材质球的光照分量在线性 RGB 空间相加，显示合成结果前再做 Reinhard 色调映射和 sRGB 编码。D、G、F 的灰度图按各自的显示规则呈现。比较公式中的数值时，可以直接看滑块下方的读数。
+
+### 术语速查
+
+法线 N
+: 垂直于表面、朝外的单位向量。N 与光线方向 L 的夹角决定表面的入射余弦，微表面菲涅耳项则使用 V 与 H 的夹角。
+
+光线方向 L 与视线方向 V
+: 从表面点分别指向光源和眼睛的单位向量。
+
+半程向量 H
+: L 与 V 的角平分方向，H = normalize(L + V)。朝向 H 的微表面才会把光反射进眼睛。
+
+BRDF
+: 双向反射分布函数，给定入射方向和观察方向时，表面反射多少光。
+
+粗糙度 r
+: 微表面法线的分散程度。本页沿用常见约定 α = r²。
+
+F₀
+: 正入射时的镜面反射率。非金属约为 0.04，金属取基础色。
+
+辐亮度 Lᵢ 与辐照度 E
+: 辐亮度描述某一方向射来的光有多强；辐照度把半球上所有方向的光按余弦加权求和，描述单位面积收到多少光。
+
+IBL
+: 基于图像的光照，用一张环境图代替一盏盏具体的灯。
+
+### 下篇预告
+
+中篇只处理了环境光的漫反射部分。下篇将补上镜面 IBL：按粗糙度预过滤环境图，用 split-sum 近似把积分拆成两张查找表[^karis]，最后让粗糙金属在房间里也能映出模糊的窗户。
+
 ### 参考文献 {#references}
 
 [^tutorial]: 王子饼干．[《呆呆兽也可以学会的PBR渲染·上》](https://zhuanlan.zhihu.com/p/2005956500745652011)．知乎。
@@ -139,3 +177,4 @@ steps:
 [^cook]: R. L. Cook, K. E. Torrance. [A Reflectance Model for Computer Graphics](https://doi.org/10.1145/357290.357293). *ACM Transactions on Graphics*, 1982, 1(1), 7–24.
 [^middle]: 王子饼干．[《呆呆兽也可以学会的PBR渲染·中》](https://zhuanlan.zhihu.com/p/2013530242078221650)．知乎。
 [^ibl]: Joey de Vries. LearnOpenGL, [Diffuse irradiance](https://learnopengl.com/PBR/IBL/Diffuse-irradiance).
+[^karis]: Brian Karis. [Real Shading in Unreal Engine 4](https://blog.selfshadow.com/publications/s2013-shading-course/karis/s2013_pbs_epic_notes_v2.pdf). SIGGRAPH 2013 Course: Physically Based Shading in Theory and Practice.

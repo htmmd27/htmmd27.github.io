@@ -182,5 +182,54 @@ import { startCourse } from "./pbr-course.js";
     angle.value = -32; theta.value = 60; get("compare").value = "parts"; applyPreset("copper"); setMode("full");
   });
   setMode("full");
-  startCourse(root, {sampleBuffer, render, light, fresnel});
+  const course = startCourse(root, {sampleBuffer, render, light, fresnel});
+
+  // Specimen tray in the header: the same renderer, lit from the pointer.
+  const tray = get("lightbox");
+  const specimens = Array.from(root.querySelectorAll("[data-specimen]"), button => {
+    const [hex, r, m] = presets[button.dataset.specimen];
+    const color = [1, 3, 5].map(start => {
+      const s = parseInt(hex.slice(start, start + 2), 16) / 255;
+      return s <= 0.04045 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
+    });
+    const f0 = color.map(c => 0.04 * (1 - m) + c * m);
+    button.addEventListener("click", () => {
+      applyPreset(button.dataset.specimen);
+      setMode("full");
+      course.go(course.bench);
+    });
+    return {sample: sampleBuffer(button.querySelector("canvas")), r, m, color, f0};
+  }).filter(s => s.sample);
+  let lampX = -0.55, lampY = 0.5, trayQueued = false, touched = false;
+  function lightTray() {
+    trayQueued = false;
+    for (const s of specimens) {
+      render(s.sample, s.r, s.m, s.color, s.f0, light(lampX, lampY, 0.9, 5, s.f0), "full");
+    }
+  }
+  function aim(x, y) {
+    lampX = x; lampY = y;
+    if (!trayQueued) { trayQueued = true; requestAnimationFrame(lightTray); }
+  }
+  if (tray && specimens.length) {
+    tray.addEventListener("pointermove", event => {
+      touched = true;
+      const box = tray.getBoundingClientRect();
+      aim(2.4 * ((event.clientX - box.left) / box.width - 0.5), 1.6 * (0.5 - (event.clientY - box.top) / box.height));
+    });
+    // One slow sweep on load shows that the light is movable.
+    const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    lampX = still ? -0.55 : 1.1;
+    lightTray();
+    if (!still) {
+      const start = performance.now(), length = 1600;
+      const sweep = now => {
+        const t = Math.min(1, (now - start) / length), ease = 1 - (1 - t) ** 3;
+        if (touched) return;
+        aim(1.1 - 1.65 * ease, 0.5);
+        if (t < 1) requestAnimationFrame(sweep);
+      };
+      requestAnimationFrame(sweep);
+    }
+  }
 })();

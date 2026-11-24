@@ -109,9 +109,12 @@ export function startCourse(root,engine) {
   const buttons=Array.from(root.querySelectorAll("[data-step]"));
   const select=root.querySelector("#pbr-step-select");
   const prev=root.querySelector("#pbr-prev"), next=root.querySelector("#pbr-next");
+  const meter=root.querySelector(".pbr-meter"), routeTitle=root.querySelector("#pbr-route-title");
   const examples=[incidence,directions,facets,masking,fresnelCurve,metallic];
   const buffers=new Map();
   const middle=chapters.findIndex(chapter=>chapter.dataset.ibl);
+  const bench=chapters.findIndex(chapter=>chapter.hasAttribute("data-bench"));
+  const stepName=i=>buttons[i].lastChild.textContent.trim();
   let current=0, queued=false;
   function draw() {
     queued=false;
@@ -139,46 +142,83 @@ export function startCourse(root,engine) {
       ctx.strokeStyle=mint; ctx.lineWidth=2; ctx.stroke();
     }
   }
-  function show(index,focus) {
+  function show(index,focus,record) {
     current=index;
+    const ibl=index>=middle;
     chapters.forEach((chapter,i)=>{chapter.hidden=index!==i;});
     buttons.forEach((button,i)=>{
-      button.parentElement.hidden=(i>=middle)!==(index>=middle);
+      button.parentElement.hidden=(i>=middle)!==ibl;
+      button.toggleAttribute("data-done",i<index);
       if (i===index) button.setAttribute("aria-current","step");
       else button.removeAttribute("aria-current");
     });
     select.value=String(index);
-    prev.disabled=index===0;
+    if (routeTitle) routeTitle.textContent=ibl?"中篇 · 环境漫反射":"上篇 · 单灯直接光";
+    if (meter) {
+      meter.setAttribute("aria-valuenow",String(index+1));
+      meter.style.setProperty("--done",(index+1)/chapters.length);
+    }
     const last=index===chapters.length-1;
     root.querySelector("#pbr-final").hidden=!chapters[index].hasAttribute("data-bench");
     for (const part of root.querySelectorAll(".pbr-parts a")) {
-      if ((part.hash==="#ibl")===(index>=middle)) part.setAttribute("aria-current","true");
+      if ((part.hash==="#ibl")===ibl) part.setAttribute("aria-current","true");
       else part.removeAttribute("aria-current");
     }
-    next.textContent=last?"从头回顾 ↺":"下一步 · "+buttons[index+1].lastChild.textContent.trim()+" →";
+    prev.disabled=index===0;
+    prev.querySelector("span").textContent=index?stepName(index-1):"已是第一步";
+    next.querySelector("small").textContent=last?"读完了":index+1===middle?"进入中篇":"下一步";
+    next.querySelector("span").textContent=last?"从头回顾":stepName(index+1);
+    if (record) {
+      const hash=index===0?"#direct":index===middle?"#ibl":"#step-"+(index+1);
+      if (location.hash!==hash) history.pushState(null,"",hash);
+    }
     draw();
     if (focus) {
       const title=chapters[index].querySelector("h2");
       title.focus({preventScroll:true});
-      const top=title.getBoundingClientRect().top;
-      if (top<0 || top>window.innerHeight*.6) title.scrollIntoView({block:"start"});
+      const top=root.querySelector("#pbr-course").getBoundingClientRect().top;
+      if (top<-40 || top>window.innerHeight*.6) root.querySelector("#pbr-course").scrollIntoView({block:"start"});
     }
   }
-  for (const button of buttons) button.addEventListener("click",()=>show(Number(button.dataset.step),true));
-  select.addEventListener("change",()=>show(Number(select.value),true));
-  prev.addEventListener("click",()=>show(Math.max(0,current-1),true));
-  next.addEventListener("click",()=>show((current+1)%chapters.length,true));
-  chapters.forEach(chapter=>chapter.querySelector("input")?.addEventListener("input",()=>{
-    if (!queued) {queued=true; requestAnimationFrame(draw);}
-  }));
-  const partIndex=()=>location.hash==="#ibl"?middle:0;
+  const go=index=>show(index,true,true);
+  for (const button of buttons) button.addEventListener("click",()=>go(Number(button.dataset.step)));
+  select.addEventListener("change",()=>go(Number(select.value)));
+  prev.addEventListener("click",()=>go(Math.max(0,current-1)));
+  next.addEventListener("click",()=>go((current+1)%chapters.length));
+  chapters.forEach(chapter=>{
+    const input=chapter.querySelector("input");
+    if (!input) return;
+    const undo=chapter.querySelector("[data-undo]"), initial=input.defaultValue;
+    const sync=()=>{if (undo) undo.hidden=input.value===initial;};
+    input.addEventListener("input",()=>{
+      sync();
+      if (!queued) {queued=true; requestAnimationFrame(draw);}
+    });
+    undo?.addEventListener("click",()=>{input.value=initial; sync(); draw(); input.focus();});
+    sync();
+  });
+  // Arrow keys page through steps unless a control has keyboard focus.
+  document.addEventListener("keydown",event=>{
+    if (event.altKey||event.ctrlKey||event.metaKey||event.defaultPrevented) return;
+    if (event.target.closest("input,select,textarea,[contenteditable]")) return;
+    if (event.key==="ArrowRight" && current<chapters.length-1) {event.preventDefault(); go(current+1);}
+    if (event.key==="ArrowLeft" && current>0) {event.preventDefault(); go(current-1);}
+  });
+  const fromHash=()=>{
+    if (location.hash==="#ibl") return middle;
+    const match=/^#step-(\d+)$/.exec(location.hash);
+    return match?Math.min(chapters.length,Math.max(1,Number(match[1])))-1:0;
+  };
   for (const link of root.querySelectorAll(".pbr-parts a")) {
     link.addEventListener("click",event=>{
       event.preventDefault();
-      if (location.hash!==link.hash) history.pushState(null,"",link.hash);
-      show(link.hash==="#ibl"?middle:0,true);
+      go(link.hash==="#ibl"?middle:0);
     });
   }
-  window.addEventListener("popstate",()=>{if (["","#direct","#ibl"].includes(location.hash)) show(partIndex(),true);});
-  show(partIndex(),false);
+  window.addEventListener("popstate",()=>{
+    if (/^(|#direct|#ibl|#step-\d+)$/.test(location.hash)) show(fromHash(),true,false);
+  });
+  // A shared #step-N link lands on the lesson itself rather than the page header.
+  show(fromHash(),/^#step-\d+$/.test(location.hash),false);
+  return {go,bench};
 }
