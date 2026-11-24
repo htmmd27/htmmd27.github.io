@@ -13,6 +13,7 @@ outputs:
 permalinks:
   posts: /posts/:slug/
 params:
+  cloudflareWebAnalyticsToken: "c8a1b8154066459580298aaa152ea156"
   env: production
   title: htmmd27 的个人主页
   description: 记录学习，分享实践。htmmd27 的文章、项目与个人笔记。
