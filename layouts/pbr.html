@@ -7,6 +7,7 @@
     <h1>{{ .Title }}</h1>
     <p>{{ .Description }}</p>
   </header>
+  <nav class="pbr-parts" aria-label="选择篇章"><a href="#direct">上篇 · 单灯直接光</a><a href="#ibl">中篇 · 环境漫反射</a></nav>
   <div class="pbr-course">
     <nav class="pbr-contents" aria-label="学习步骤">
       <h2>学习路线</h2>
@@ -14,18 +15,22 @@
         <li><button type="button" data-step="{{ $i }}"{{ if not $i }} aria-current="step"{{ end }}><span>{{ printf "%02d" (add $i 1) }}</span>{{ $step.name }}</button></li>
       {{ end }}</ol>
       <label for="pbr-step-select">学习步骤</label>
-      <select id="pbr-step-select">{{ range $i, $step := .Params.steps }}<option value="{{ $i }}">{{ add $i 1 }} / 7 · {{ $step.name }}</option>{{ end }}</select>
+      <select id="pbr-step-select">{{ range $i, $step := .Params.steps }}<option value="{{ $i }}">{{ add $i 1 }} / {{ len $.Params.steps }} · {{ $step.name }}</option>{{ end }}</select>
     </nav>
     <div class="pbr-chapters">
       {{ range $i, $step := .Params.steps }}
-      <section data-chapter="{{ $i }}" aria-labelledby="pbr-title-{{ $i }}"{{ if $i }} hidden{{ end }}>
+      <section data-chapter="{{ $i }}" {{ if not $i }}id="direct"{{ else if eq $step.experiment "panorama" }}id="ibl"{{ end }} {{ with $step.experiment }}data-ibl="{{ . }}"{{ end }} {{ if $step.bench }}data-bench{{ end }} aria-labelledby="pbr-title-{{ $i }}"{{ if $i }} hidden{{ end }}>
         <p class="pbr-progress">第 {{ add $i 1 }} 步 / {{ len $.Params.steps }}</p>
         <h2 tabindex="-1" id="pbr-title-{{ $i }}">{{ $step.title }}</h2>
         <p class="pbr-intuition">{{ $step.text }}</p>
         {{ if $step.label }}
         <div class="pbr-exhibit">
           <div class="pbr-plates">
+            {{ if $step.experiment }}
+            <figure class="ibl-diagram"><canvas width="400" height="220" aria-label="{{ $step.name }}互动示意图"></canvas><figcaption></figcaption></figure>
+            {{ else }}
             <svg viewBox="0 0 400 220" role="img" aria-label="{{ $step.name }}互动示意图"></svg>
+            {{ end }}
             <figure><canvas width="180" height="180" aria-label="此步骤的球面效果"></canvas><figcaption></figcaption></figure>
           </div>
           <div class="pbr-experiment">

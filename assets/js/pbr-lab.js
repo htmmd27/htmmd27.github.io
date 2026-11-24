@@ -70,7 +70,7 @@ import { startCourse } from "./pbr-course.js";
     return {x, y, z, hx:x / h, hy:y / h, hz:(z + 1) / h, intensity,
       F:f0.map(c => fresnel(c, (z + 1) / h))};
   }
-  function render(sample, r, m, color, f0, lamp, view = mode) {
+  function render(sample, r, m, color, f0, lamp, view = mode, ambient = null, ao = 1) {
     const {context, image, normals} = sample;
     const a2 = r ** 4, k = (r + 1) ** 2 / 8;
     const pixels = image.data;
@@ -89,6 +89,10 @@ import { startCourse } from "./pbr-course.js";
       }
       if (nl <= 0) {
         pixels[p] = pixels[p + 1] = pixels[p + 2] = 0;
+        if (ambient) for (let c = 0; c < 3; c++) {
+          const indirect = ambient[n + c] * ao;
+          pixels[p + c] = byte(indirect / (1 + indirect));
+        }
         continue;
       }
       const nh = Math.min(1, Math.max(0, nx * lamp.hx + ny * lamp.hy + nv * lamp.hz));
@@ -105,7 +109,7 @@ import { startCourse } from "./pbr-course.js";
         const F = lamp.F[c];
         const diffuse = view === "specular" ? 0 : (1 - F) * (1 - m) * color[c] / Math.PI;
         const specular = view === "diffuse" ? 0 : specScale * F;
-        const radiance = (diffuse + specular) * nl * lamp.intensity;
+        const radiance = (diffuse + specular) * nl * lamp.intensity + (ambient ? ambient[n + c] * ao : 0);
         pixels[p + c] = byte(radiance / (1 + radiance));
       }
     }

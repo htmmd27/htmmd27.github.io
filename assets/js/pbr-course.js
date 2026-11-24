@@ -1,3 +1,4 @@
+import { drawEnvironmentLesson } from "./pbr-environment.js";
 // The diagrams are cross sections. Angles are measured from the surface normal.
 const rad = degree => degree * Math.PI / 180;
 const amber = "#ffca80", mint = "#8fe1ca", ink = "#e4edeb", faint = "#71878d";
@@ -110,9 +111,14 @@ export function startCourse(root,engine) {
   const prev=root.querySelector("#pbr-prev"), next=root.querySelector("#pbr-next");
   const examples=[incidence,directions,facets,masking,fresnelCurve,metallic];
   const buffers=new Map();
+  const middle=chapters.findIndex(chapter=>chapter.dataset.ibl);
   let current=0, queued=false;
   function draw() {
     queued=false;
+    if (chapters[current].dataset.ibl) {
+      drawEnvironmentLesson(chapters[current],engine);
+      return;
+    }
     if (!examples[current]) return;
     const section=chapters[current], input=section.querySelector("input"), value=Number(input.value);
     const result=examples[current](value,engine.fresnel);
@@ -137,13 +143,18 @@ export function startCourse(root,engine) {
     current=index;
     chapters.forEach((chapter,i)=>{chapter.hidden=index!==i;});
     buttons.forEach((button,i)=>{
+      button.parentElement.hidden=(i>=middle)!==(index>=middle);
       if (i===index) button.setAttribute("aria-current","step");
       else button.removeAttribute("aria-current");
     });
     select.value=String(index);
     prev.disabled=index===0;
     const last=index===chapters.length-1;
-    root.querySelector("#pbr-final").hidden=!last;
+    root.querySelector("#pbr-final").hidden=!chapters[index].hasAttribute("data-bench");
+    for (const part of root.querySelectorAll(".pbr-parts a")) {
+      if ((part.hash==="#ibl")===(index>=middle)) part.setAttribute("aria-current","true");
+      else part.removeAttribute("aria-current");
+    }
     next.textContent=last?"从头回顾 ↺":"下一步 · "+buttons[index+1].lastChild.textContent.trim()+" →";
     draw();
     if (focus) {
@@ -160,5 +171,14 @@ export function startCourse(root,engine) {
   chapters.forEach(chapter=>chapter.querySelector("input")?.addEventListener("input",()=>{
     if (!queued) {queued=true; requestAnimationFrame(draw);}
   }));
-  show(0,false);
+  const partIndex=()=>location.hash==="#ibl"?middle:0;
+  for (const link of root.querySelectorAll(".pbr-parts a")) {
+    link.addEventListener("click",event=>{
+      event.preventDefault();
+      if (location.hash!==link.hash) history.pushState(null,"",link.hash);
+      show(link.hash==="#ibl"?middle:0,true);
+    });
+  }
+  window.addEventListener("popstate",()=>{if (["","#direct","#ibl"].includes(location.hash)) show(partIndex(),true);});
+  show(partIndex(),false);
 }
