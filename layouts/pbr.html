@@ -63,7 +63,7 @@
           </div>
           <div class="pbr-experiment">
             <p class="pbr-task"><b>动手</b>{{ $step.task }}</p>
-            {{ if eq $step.experiment "finish" }}<label class="pbr-material">材质 <select id="ibl-material"><option value="copper">铜</option><option value="ceramic">陶瓷</option></select></label>{{ end }}
+            {{ if eq $step.experiment "finish" }}<label class="pbr-material">材质 <select id="ibl-material"><option value="copper">铜</option><option value="gold">金</option><option value="ceramic">陶瓷</option></select></label>{{ end }}
             <div class="pbr-dial">
               <label class="pbr-slider" for="guide-slider-{{ $i }}">{{ $step.label }} <output for="guide-slider-{{ $i }}"></output></label>
               <input id="guide-slider-{{ $i }}" type="range" min="{{ $step.min }}" max="{{ $step.max }}" step="{{ $step.increment | default 1 }}" value="{{ $step.initial }}">
