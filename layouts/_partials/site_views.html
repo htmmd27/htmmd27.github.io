@@ -1,0 +1,7 @@
+<p class="site-views">近 30 天全站浏览量 ·
+  {{- if fileExists "static/site-views.json" }}
+    {{- $stats := transform.Unmarshal (readFile "static/site-views.json") }}
+    <strong>{{ lang.FormatNumber 0 $stats.views }}</strong> 次 · 截至 <time datetime="{{ $stats.through }}">{{ $stats.through }}</time>
+  {{- else }} 等待首次更新
+  {{- end }}
+</p>

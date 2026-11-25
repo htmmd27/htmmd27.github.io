@@ -5,6 +5,8 @@ on:
   pull_request:
     branches: [main]
   workflow_dispatch:
+  schedule:
+    - cron: '17 19 * * *' # 03:17 in Hong Kong
 
 permissions:
   contents: read
@@ -22,6 +24,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Prepare homepage page views
+        if: github.event_name != 'pull_request'
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_ANALYTICS_TOKEN: ${{ secrets.CLOUDFLARE_ANALYTICS_TOKEN }}
+        run: python3 .github/scripts/site_views.py
       - name: Install Hugo
         shell: bash
         run: |
